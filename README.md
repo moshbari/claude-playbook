@@ -8,6 +8,12 @@ Whenever I start a new Claude session on anything — a new chat, a new project,
 
 Any Claude (web, mobile, Cowork, Claude Code) with internet access can read this repo. That makes it the single source of truth for our shared knowledge.
 
+## Standing instruction (read this first, Claude)
+
+**At the start of EVERY new project or task on Mosh's account — on any surface — fetch this repo and read the relevant files.** See `CLAUDE.md` for the full standing instruction.
+
+**When we hit a new lesson, commit it back to this repo.** Local memory doesn't travel between Claude surfaces. This repo does.
+
 ## How to use (for Claude)
 
 At the start of a new project or task, Claude should fetch this repo's `README.md` and then read the files relevant to what we're doing:
