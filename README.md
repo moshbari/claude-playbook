@@ -21,6 +21,9 @@ At the start of a new project or task, Claude should fetch this repo's `README.m
 - **Any writing, UI, or product work** → read `WRITING_STYLE.md` and `UX_CLICK_ONLY.md`.
 - **Shipping a SaaS with billing or auth** → read `SAAS_LAUNCH_CHECKLIST.md`.
 - **Deploying anything** → read `INFRA_HETZNER_COOLIFY.md`.
+- **Uploading images/files to GoHighLevel media library** → read `GHL_MEDIA_UPLOAD.md`.
+- **Any Next.js project on Railway (especially with a Dockerfile)** → read `NEXTJS_DOCKER_RAILWAY.md`.
+- **"It deployed but something silently isn't working"** → read `DEBUGGING_DEPLOYMENTS.md`.
 - **Adding a new lesson** → append to the right file and bump the "Last updated" line at the top.
 
 ## How to use (for me — Mosh)
@@ -35,10 +38,13 @@ When Claude and I hit a new lesson — a mistake, a surprise, a thing that took 
 | `UX_CLICK_ONLY.md` | Click-only UX rule. Grandma-with-thick-glasses test. |
 | `SAAS_LAUNCH_CHECKLIST.md` | Pre-launch checklist for SaaS with billing webhooks and auth. |
 | `INFRA_HETZNER_COOLIFY.md` | My standard deploy stack. Hetzner + Coolify + Cloudflare DNS. |
+| `NEXTJS_DOCKER_RAILWAY.md` | Next.js on Railway with a Dockerfile — build-time env vars, lazy-init clients, missing system binaries. |
+| `GHL_MEDIA_UPLOAD.md` | GoHighLevel media library upload — the endpoint, auth, folder traps, env var traps. |
+| `DEBUGGING_DEPLOYMENTS.md` | Verification sequence for silent-failure bugs. When the code "works" but nothing actually happens. |
 | `PROJECTS.md` | Active and shipped projects — what they are, where they live. |
 
 ## Owner
 
 Mosh (engrmoshbari@gmail.com).
 
-_Last updated: 2026-04-18_
+_Last updated: 2026-04-18 (added GHL_MEDIA_UPLOAD, NEXTJS_DOCKER_RAILWAY, DEBUGGING_DEPLOYMENTS, and EveryLink project entry)_
