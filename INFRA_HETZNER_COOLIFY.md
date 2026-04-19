@@ -1,6 +1,6 @@
 # Infra — Hetzner + Coolify
 
-_Last updated: 2026-04-18_
+_Last updated: 2026-04-19_
 
 ## My standard deploy stack
 
@@ -34,6 +34,11 @@ The sandbox network proxy blocks direct HTTP access to my Hetzner IP (`178.156.2
 - **Deployments** — list of recent deploys with commit SHAs. First stop if "my change isn't live."
 - **Terminal** — in-container shell. Good for running `node -e "..."` or Prisma commands against the live DB.
 - **Webhooks** (in Git Source) — where to paste the provider URL for GitHub auto-deploy.
+
+## Small Coolify quirks worth knowing
+
+- **"Developer view" for bulk env var edits.** On the Environment Variables page, there's a "Developer view" toggle next to "+ Add". It swaps the per-variable form for a single dotenv textarea containing every var. Paste or append lines, click "Save All Environment Variables" — done. Much faster than clicking "+ Add" three times and filling two fields each.
+- **The "latest configuration has not been applied" banner is noisy.** If you save env vars and click Redeploy within the same second, the banner shows up during the in-progress deploy and then clears when it finishes. It does NOT mean the new deploy is using stale env vars — Coolify picks up the saved values as long as they were saved before you clicked Redeploy. Ignore the banner until the deploy completes; only worry if it's still there afterwards.
 
 ## Related projects running on this stack
 

@@ -1,6 +1,6 @@
 # Debugging deployments — "the code looks fine but something is wrong"
 
-_Last updated: 2026-04-18_
+_Last updated: 2026-04-19_
 
 ## Why this exists
 
@@ -69,6 +69,21 @@ HTTP 200 is not proof. `userId` being returned is not proof. What matters:
 - For webhooks: DB row reflects the event.
 - For billing: tier flipped in DB AND user sees it after refresh/re-login.
 - For emails: the recipient actually got it (check inbox, not just "sent" status).
+
+### The `opaqueredirect` trick for auth-gated redirectors
+
+If you moved storage from local disk to a CDN (S3, GHL, R2) and your app has an auth-gated endpoint that should now 302 to the CDN, this 2-second check tells you whether the migration took. From the browser devtools on the live app, while logged in as a real user:
+
+```js
+fetch('/api/download/<id>', { redirect: 'manual', credentials: 'include' })
+  .then(r => ({ type: r.type, status: r.status, location: r.headers.get('location') }))
+```
+
+- `type: "opaqueredirect"` → the server is 302-ing to a **cross-origin** URL (the CDN host). Migration is live, no bytes going through your server.
+- `type: "basic"`, `status: 200` → still serving bytes from disk. Migration didn't take.
+- `type: "error"` → the route crashed. Read container logs.
+
+Works because `redirect: 'manual'` on a cross-origin redirect target gives `type: 'opaqueredirect'` with status 0 and no accessible headers — but the *existence* of that type is itself the signal. No container shell, no DB query needed.
 
 ## The container age trap (the one that got us)
 

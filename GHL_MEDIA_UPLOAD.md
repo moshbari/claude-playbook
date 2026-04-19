@@ -128,6 +128,62 @@ Specific to GHL:
 - **Dockerfiles don't inherit Railway env vars at build time.** Declare both `ARG` and `ENV` for every var `next build` reads. If you skip this for Supabase (common), `next build` blows up with "URL and API key required to create Supabase client."
 - **docker-compose needs each env var listed explicitly** in the service's `environment:` block. Having them in host `.env` is not enough — that file is only used for `${VAR}` substitution in the YAML.
 
+## Migrating an app from disk to GHL — the universal storage pointer
+
+When a project already stores user files on disk and you're adding GHL after the fact, **do not add a parallel `ghlUrl` column.** Reuse the existing path column (`pdfPath`, `zipPath`, `coverPath`, `filePath`, whatever it's called) and store *either* a URL *or* a disk path in that same field. The read route branches on `startsWith("http")`.
+
+Why this beats the parallel-column approach:
+
+- Legacy rows with disk paths keep working — zero DB migration.
+- New rows with URLs skip server I/O — the download endpoint 302s to the CDN.
+- One mental model per asset: "this pointer tells you where the file is."
+- `tryUploadToGhl()` returns `null` on failure, so the caller does `pdfPath: ghlUrl || localDiskPath` — the disk copy is a free fallback that kicks in if GHL is down or rate-limits.
+
+Write side (after you've built the buffer and written it to disk):
+
+```ts
+const ghlUrl = await tryUploadToGhl(buf, safeName, contentType); // null on fail
+await prisma.generation.update({
+  where: { id },
+  data: { pdfPath: ghlUrl || localDiskPath },
+});
+```
+
+Read side (auth-gated API route):
+
+```ts
+const gen = await prisma.generation.findUnique({ where: { id } });
+if (!gen.pdfPath) return 404;
+
+// GHL CDN URL — redirect cross-origin, no bytes through our server.
+if (gen.pdfPath.startsWith("http://") || gen.pdfPath.startsWith("https://")) {
+  return NextResponse.redirect(gen.pdfPath, 302);
+}
+
+// Legacy disk path (pre-GHL rows)
+if (!fs.existsSync(gen.pdfPath)) return 404;
+return new NextResponse(fs.readFileSync(gen.pdfPath), { /* ... */ });
+```
+
+StepWise and AI Image Creator each added parallel URL columns when we migrated them — Printables uses this single-column pattern instead, and it's measurably cleaner. Do this on the next migration.
+
+## Verifying a migration landed — the `opaqueredirect` trick
+
+After shipping the migration, run this from the browser devtools on the live app (while logged in as a real user):
+
+```js
+fetch('/api/download/<id>', { redirect: 'manual', credentials: 'include' })
+  .then(r => ({ type: r.type, status: r.status, location: r.headers.get('location') }))
+```
+
+Interpret the result:
+
+- `type: "opaqueredirect"` → the server is 302-ing to a **cross-origin** URL (the GHL CDN at `assets.cdn.filesafe.space`). Migration is live, the endpoint is no longer serving bytes from disk. ✅
+- `type: "basic"`, `status: 200` → the endpoint is still reading the file from disk and streaming it through Next.js. Migration didn't take — check env vars, check the update to the read route, check that new uploads are actually writing URLs to the DB.
+- `type: "error"` or a network failure → the route crashed. Read the container logs.
+
+Works in 2 seconds, no container shell, no DB query. Add to the post-deploy checklist.
+
 ## Checklist before calling an upload integration shipped
 
 - [ ] `docker exec <app> env | grep GHL` shows all three vars inside the container (or `cat /opt/<project>/ghl-config.json` on VPS).
@@ -140,4 +196,5 @@ Specific to GHL:
 
 - **curl + form field `parentId` (recommended, Node on VPS):** `moshbari/video-processor-railway`'s `ghl-uploader.js` (the StepWise origin). Also lives on the VPS at `/opt/stepwise-video/ghl-uploader.js` — **this file exists only on the VPS, never committed to GitHub.** TODO: commit it.
 - **curl + form field `parentId` (Next.js serverless):** `src/app/api/ghl-upload/route.ts` in `moshbari/everylink`. Writes to `/tmp/ghl-uploads/<uuid>_<safename>`, 2-minute timeout, cleans up in `finally`, 100 MB cap, MIME type whitelist.
+- **curl + form field `parentId` + universal storage pointer (Next.js standalone):** `src/lib/ghl.ts` in `moshbari/printables`. Small module: `isGhlConfigured()`, `resolveFolderId()` (caches for process lifetime), `uploadToGhl()` (throws), `tryUploadToGhl()` (returns null). Called from `src/app/api/generate/route.ts` via `Promise.all` for ZIP + PDF + cover. Read routes (`/api/download/[id]`, `/api/file/[id]/[name]`) branch on `startsWith("http")` and 302 redirect. Reference for any project migrating disk → GHL.
 - **fetch + query param `folderId`:** `src/lib/ghl.ts` in the AI Image Creator project. Web FormData + Blob, separate helpers for Buffer / URL / base64 inputs.
