@@ -1,8 +1,21 @@
 # Projects
 
-_Last updated: 2026-04-18_
+_Last updated: 2026-04-19_
 
 Active and shipped projects. Claude: when I mention a project by name, check here first.
+
+## StepWise
+
+- **Domain:** app.heychatmate.com (hosted guides + API), heychatmate.com (marketing, on GHL)
+- **Repo:** github.com/moshbari/stepwise (public)
+- **Pitch:** Chrome extension for step-by-step workflow documentation. Captures annotated screenshots, generates AI-narrated MP4 videos, publishes guides as hosted HTML pages.
+- **Target customer:** Agency owners and SOP-heavy teams who need repeatable how-to content fast.
+- **Stack:** Chrome extension (MV3) + Node.js/Express on Contabo VPS (`109.205.182.135`), HestiaCP managed, PM2 process manager, Nginx reverse proxy, FFmpeg for video, OpenAI TTS (narration) + Whisper (voice-to-text).
+- **GHL integration:** Videos auto-uploaded to GHL sub-account "AI Wealth Accelerator" (location `MV4qgCBrDVTq6S9QIYNa`), folder "Step Wise 13Feb26". Uses curl + `parentId` form field pattern. See `GHL_MEDIA_UPLOAD.md`.
+- **Publish pipeline:** HTTPS proxy at `app.heychatmate.com/stepwise-api/` → Node on port 3600. Deploy webhook on port 3601 (auto-deploy on GitHub push to main).
+- **Version control rule:** Every extension change bumps `manifest.json`, the version badge in `editor.html` header, the entry in `server/downloads.html`, and ships a new zip on the downloads page. Never push extension changes without the version bump.
+- **Origin of `ghl-uploader.js`:** This is where the GHL pattern was first cracked. The file lives at `/opt/stepwise-video/ghl-uploader.js` on the VPS and is **not yet committed to GitHub**.
+- **Status:** Live. v2.4.2 on the Chrome Web Store.
 
 ## Printables
 

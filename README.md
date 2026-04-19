@@ -47,4 +47,4 @@ When Claude and I hit a new lesson — a mistake, a surprise, a thing that took 
 
 Mosh (engrmoshbari@gmail.com).
 
-_Last updated: 2026-04-18 (added GHL_MEDIA_UPLOAD, NEXTJS_DOCKER_RAILWAY, DEBUGGING_DEPLOYMENTS, and EveryLink project entry)_
+_Last updated: 2026-04-19 (StepWise added to PROJECTS; GHL_MEDIA_UPLOAD expanded with full failure log from StepWise origin story)_
