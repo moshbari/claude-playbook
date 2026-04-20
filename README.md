@@ -27,6 +27,7 @@ At the start of a new project or task, Claude should fetch this repo's `README.m
 - **Uploading images/files to GoHighLevel media library** → read `GHL_MEDIA_UPLOAD.md`.
 - **Any Next.js project on Railway (especially with a Dockerfile)** → read `NEXTJS_DOCKER_RAILWAY.md`.
 - **"It deployed but something silently isn't working"** → read `DEBUGGING_DEPLOYMENTS.md`.
+- **Working in Cowork specifically** → read `COWORK_QUIRKS.md`.
 - **Adding a new lesson** → append to the right file and bump the "Last updated" line at the top.
 
 ## How to use (for me — Mosh)
@@ -47,10 +48,11 @@ When Claude and I hit a new lesson — a mistake, a surprise, a thing that took 
 | `NEXTJS_DOCKER_RAILWAY.md` | Next.js on Railway with a Dockerfile — build-time env vars, lazy-init clients, missing system binaries. |
 | `GHL_MEDIA_UPLOAD.md` | GoHighLevel media library upload — the endpoint, auth, folder traps, env var traps. |
 | `DEBUGGING_DEPLOYMENTS.md` | Verification sequence for silent-failure bugs, including DNS + TLS checks before saying "done." |
+| `COWORK_QUIRKS.md` | Cowork-specific gotchas — Chrome MCP's two permission gates, sandbox IP drift, when to stop fighting. |
 | `PROJECTS.md` | Active and shipped projects — what they are, where they live. |
 
 ## Owner
 
 Mosh (engrmoshbari@gmail.com).
 
-_Last updated: 2026-04-20 (added ZERO_TOUCH_SETUP, COOLIFY_API_QUIRKS, URL_CONVENTIONS; DEBUGGING_DEPLOYMENTS gained a DNS + TLS section; INFRA_HETZNER_COOLIFY got GitHub automation notes; PROJECTS got apps.bizapp.club and multi-domain kickoff rule; Path A decision locked in — Coolify API allowlist stays at 0.0.0.0/0 by design, do not revert)_
+_Last updated: 2026-04-20 (added ZERO_TOUCH_SETUP, COOLIFY_API_QUIRKS, URL_CONVENTIONS, COWORK_QUIRKS; DEBUGGING_DEPLOYMENTS gained DNS+TLS section and docker-exit-255 retry note; INFRA_HETZNER_COOLIFY got GitHub automation notes + same-SHA-redeploy and log-link quirks; PROJECTS got apps.bizapp.club and multi-domain kickoff rule; Path A locked in — Coolify API allowlist stays at 0.0.0.0/0 by design, do not revert)_

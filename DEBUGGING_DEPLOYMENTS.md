@@ -85,6 +85,16 @@ fetch('/api/download/<id>', { redirect: 'manual', credentials: 'include' })
 
 Works because `redirect: 'manual'` on a cross-origin redirect target gives `type: 'opaqueredirect'` with status 0 and no accessible headers — but the *existence* of that type is itself the signal. No container shell, no DB query needed.
 
+## Docker `exit 255` at "exporting to image" — retry before debugging
+
+Saw this during the first deploy after switching `apps-bizapp-club` to the GitHub App source (2026-04-20). Log showed all 10 Dockerfile steps succeeding — `npm install`, every COPY, layer builds — then `#11 exporting to image` died with `Command execution failed (exit code 255)` and no further output.
+
+Exit 255 from `docker exec` at the export step is often transient. Causes seen in the wild: BuildKit cache hiccup, ephemeral disk pressure, daemon blip. Not usually a code problem.
+
+**Rule: before debugging, Redeploy once.** If it passes on retry (as it did here — the second attempt used the cached image from the first run and did a rolling restart), the first failure was noise.
+
+If it fails twice with the same error, then dig: check server disk (`df -h` via Coolify Terminal), check Docker daemon logs, check for BuildKit cache corruption.
+
 ## The container age trap (the one that got us)
 
 Hour burned on AI Image Creator: user kept saying "I generated images, they're not in GHL." DB showed newest image at 05:03 UTC. Container was rebuilt at 04:36 UTC. The "new images" were actually from the old container that had served requests for 27 minutes after the rebuild started — racing with the new container as it came up. All those images went through the pre-GHL code path.

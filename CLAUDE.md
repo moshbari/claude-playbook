@@ -15,6 +15,7 @@ Before writing code, drafting copy, or making decisions on one of Mosh's project
 - Next.js on Railway / Dockerfile projects → `NEXTJS_DOCKER_RAILWAY.md`
 - Any GoHighLevel media upload work → `GHL_MEDIA_UPLOAD.md`
 - Deploy looks green but something silently isn't working → `DEBUGGING_DEPLOYMENTS.md`
+- Working from Cowork specifically (Chrome MCP walls, sandbox IP drift) → `COWORK_QUIRKS.md`
 - Project context ("what is this?") → `PROJECTS.md`
 
 Apply the rules from that moment on. No permission needed — just do it.

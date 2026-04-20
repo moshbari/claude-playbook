@@ -39,6 +39,11 @@ The sandbox network proxy blocks direct HTTP access to my Hetzner IP (`178.156.2
 
 - **"Developer view" for bulk env var edits.** On the Environment Variables page, there's a "Developer view" toggle next to "+ Add". It swaps the per-variable form for a single dotenv textarea containing every var. Paste or append lines, click "Save All Environment Variables" — done. Much faster than clicking "+ Add" three times and filling two fields each.
 - **The "latest configuration has not been applied" banner is noisy.** If you save env vars and click Redeploy within the same second, the banner shows up during the in-progress deploy and then clears when it finishes. It does NOT mean the new deploy is using stale env vars — Coolify picks up the saved values as long as they were saved before you clicked Redeploy. Ignore the banner until the deploy completes; only worry if it's still there afterwards.
+- **Redeploy on the same commit SHA skips the build.** Log will say `No configuration changed & image found (<uuid>:<sha>) with the same Git Commit SHA. Build step skipped.` — Coolify reuses the cached image and does a rolling restart only. Implications:
+  - For **code changes**: push a new commit, don't just click Redeploy on the old SHA.
+  - For **env-var-only changes**: Redeploy is correct — it applies new env vars to a restart of the cached image. No rebuild needed.
+  - If you **must** force a rebuild on the same SHA (e.g., to re-pull a base image that was updated upstream), make a trivial no-op commit — a whitespace change in a COPYed file is enough.
+- **Clicking the commit SHA on a Deployments row goes to GitHub, not the Coolify log.** To see the build log, click the commit **message** (to the right of the dash). Or click the download icon on the expanded card — it saves the log as a `.txt` file.
 
 ## GitHub automation — the tokens and settings that actually work
 
