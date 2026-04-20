@@ -107,6 +107,21 @@ Match by name in the response, grab the id.
 | 6 | Listing without `type` param | 422 "type must be a string" | Always include `type=folder` or `type=file` |
 | 7 | `hosted=true` URL upload | 400 "Unsupported content type" | Upload file bytes directly |
 | 8 | `folderId` as form field | 200 OK but file lands at root | Use `parentId` (form field) or `?folderId=` (query param) |
+| 9 | curl `-F 'file=@path'` on `node:20-slim` | INVALID_FILE_TYPE — slim image has no `/etc/mime.types`, curl sends `application/octet-stream` | Set MIME explicitly: `-F "file=@path;type=audio/mpeg"` (or whatever the real type is). Bites any slim base — Alpine, debian-slim, distroless. |
+
+## MIME type — must be set explicitly on slim Docker bases
+
+`node:20-slim` (and most slim/Alpine/distroless bases) ship without `/etc/mime.types`. With no lookup table, curl falls back to `application/octet-stream` for every `-F file=@path`. GHL's parser whitelists by MIME and rejects octet-stream with `INVALID_FILE_TYPE`. The traps that make this hard to spot: it works on your laptop (full mime DB), it works in `node:20` (non-slim), and the GHL error message doesn't mention MIME at all.
+
+Always set the type explicitly on the form field:
+
+```bash
+-F "file=@/tmp/clip.mp3;type=audio/mpeg"
+```
+
+Common audio/video types GHL accepts: `audio/mpeg` (mp3), `video/mp4`, `image/png`, `image/jpeg`, `application/pdf`. **`audio/mp4` for `.m4a` is rejected** — transcode m4a to mp3 before upload (ffmpeg `-c:a libmp3lame`) rather than trying to upload the raw m4a.
+
+Reference: `listen-bizapp-club/lib/ghl.js` hardcodes `;type=audio/mpeg` because it always transcodes to MP3 before upload.
 
 ## Required env vars (every project)
 

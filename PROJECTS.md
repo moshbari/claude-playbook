@@ -1,6 +1,6 @@
 # Projects
 
-_Last updated: 2026-04-20_
+_Last updated: 2026-04-20_ (listen.bizapp.club added)
 
 Active and shipped projects. Claude: when I mention a project by name, check here first.
 
@@ -53,6 +53,21 @@ Active and shipped projects. Claude: when I mention a project by name, check her
 - **Admin:** username `admin` (not an email). Password lives in `secrets.txt`.
 - **Second parent domain, not a replacement for `99dfy.com`.** When starting a new project, ask Mosh which parent domain to use.
 - **Status:** Live. Deployed via Coolify API (IP allowlist widens + reverts pattern). Next: install Coolify GitHub App for push-to-deploy.
+
+## listen.bizapp.club
+
+- **Domain:** `listen.bizapp.club` (child app under the `bizapp.club` parent, covered by the existing `*.bizapp.club` wildcard — no manual DNS record needed)
+- **Repo:** github.com/moshbari/listen-bizapp-club (private)
+- **Pitch:** Upload an iPhone voice memo, get a share link. Recipients tap the link and play in-browser. No download, no login for listeners — solves the "WhatsApp can't open the voice memo" problem.
+- **Target customer:** Mosh personally, for sharing recorded thoughts with friends/family over WhatsApp and other messengers.
+- **Stack:** Node.js 20 + Express, SQLite (`better-sqlite3`) on a Coolify persistent volume, ffmpeg for transcode + split, curl for GHL uploads (same pattern as StepWise), Docker on Coolify/Hetzner.
+- **Auth:** Single shared password for uploads (signed cookie session). Listen pages are public, unguessable 8-char nanoid slug at `/p/<slug>`. `X-Robots-Tag: noindex` on listen pages.
+- **Pipeline:** any audio in → ffmpeg transcode to **64 kbps mono 22.05 kHz MP3** → if > 24 MB, split into 40-minute parts via `ffmpeg -f segment -c copy` → upload each part to GHL media library → store slug + part URLs in SQLite → render listen page with `<audio controls controlslist="nodownload">` that auto-advances via the `ended` event.
+- **GHL integration:** sub-account `AI Wealth Accelerator` (location `MV4qgCBrDVTq6S9QIYNa`), folder `69e5b3892c135a8c837d45a5`. Hardcodes `;type=audio/mpeg` on the curl form field because `node:20-slim` has no `/etc/mime.types` — see `GHL_MEDIA_UPLOAD.md` row #9.
+- **Why GHL and not S3:** reuses the sub-account's CDN (`assets.cdn.filesafe.space`), zero new infra bills, and Mosh already pays for GHL. `audio/mpeg` files are publicly streamable from the CDN with `Accept-Ranges: bytes` and `Access-Control-Allow-Origin: *` — verified in production.
+- **Coolify app UUID:** `j5fxh5htxnrjozyjgn54neog`. Persistent volume mounted at `/app/data` for the SQLite DB. Deploy via `POST /api/v1/deploy?uuid=<uuid>&force=true`.
+- **Not committed to repo:** `.env` (Coolify owns the runtime env).
+- **Status:** Live. Verified end-to-end 2026-04-20 — MP3 streams from GHL CDN with `content-type: audio/mpeg` and range support.
 
 ## Notes for future projects
 
