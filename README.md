@@ -18,9 +18,12 @@ Any Claude (web, mobile, Cowork, Claude Code) with internet access can read this
 
 At the start of a new project or task, Claude should fetch this repo's `README.md` and then read the files relevant to what we're doing:
 
+- **Starting ANY new project** → read `ZERO_TOUCH_SETUP.md` first, then `PROJECTS.md`.
 - **Any writing, UI, or product work** → read `WRITING_STYLE.md` and `UX_CLICK_ONLY.md`.
+- **Picking a URL / subdomain structure** → read `URL_CONVENTIONS.md`.
 - **Shipping a SaaS with billing or auth** → read `SAAS_LAUNCH_CHECKLIST.md`.
 - **Deploying anything** → read `INFRA_HETZNER_COOLIFY.md`.
+- **Driving the Coolify REST API directly** → read `COOLIFY_API_QUIRKS.md`.
 - **Uploading images/files to GoHighLevel media library** → read `GHL_MEDIA_UPLOAD.md`.
 - **Any Next.js project on Railway (especially with a Dockerfile)** → read `NEXTJS_DOCKER_RAILWAY.md`.
 - **"It deployed but something silently isn't working"** → read `DEBUGGING_DEPLOYMENTS.md`.
@@ -34,17 +37,20 @@ When Claude and I hit a new lesson — a mistake, a surprise, a thing that took 
 
 | File | What's in it |
 |---|---|
+| `ZERO_TOUCH_SETUP.md` | The five one-time items I need so Claude can do everything without me clicking. |
 | `WRITING_STYLE.md` | 5th-grade reading level rule. Applies to product copy, emails, and chat. |
 | `UX_CLICK_ONLY.md` | Click-only UX rule. Grandma-with-thick-glasses test. |
+| `URL_CONVENTIONS.md` | Flat subdomains over nested. Why `<name>.brand.com` beats `<name>.app.brand.com`. |
 | `SAAS_LAUNCH_CHECKLIST.md` | Pre-launch checklist for SaaS with billing webhooks and auth. |
-| `INFRA_HETZNER_COOLIFY.md` | My standard deploy stack. Hetzner + Coolify + Cloudflare DNS. |
+| `INFRA_HETZNER_COOLIFY.md` | My standard deploy stack. Hetzner + Coolify + Cloudflare DNS + GitHub automation. |
+| `COOLIFY_API_QUIRKS.md` | Every field name and sequencing trap in Coolify's REST API. `domains` vs `fqdn`, restart-after-fqdn, storage types, IP allowlist, webhook signatures. |
 | `NEXTJS_DOCKER_RAILWAY.md` | Next.js on Railway with a Dockerfile — build-time env vars, lazy-init clients, missing system binaries. |
 | `GHL_MEDIA_UPLOAD.md` | GoHighLevel media library upload — the endpoint, auth, folder traps, env var traps. |
-| `DEBUGGING_DEPLOYMENTS.md` | Verification sequence for silent-failure bugs. When the code "works" but nothing actually happens. |
+| `DEBUGGING_DEPLOYMENTS.md` | Verification sequence for silent-failure bugs, including DNS + TLS checks before saying "done." |
 | `PROJECTS.md` | Active and shipped projects — what they are, where they live. |
 
 ## Owner
 
 Mosh (engrmoshbari@gmail.com).
 
-_Last updated: 2026-04-19 (StepWise added to PROJECTS; GHL_MEDIA_UPLOAD expanded with full failure log from StepWise origin story)_
+_Last updated: 2026-04-20 (added ZERO_TOUCH_SETUP, COOLIFY_API_QUIRKS, URL_CONVENTIONS; DEBUGGING_DEPLOYMENTS gained a DNS + TLS section; INFRA_HETZNER_COOLIFY got GitHub automation notes; PROJECTS got apps.bizapp.club and multi-domain kickoff rule)_

@@ -1,6 +1,6 @@
 # Projects
 
-_Last updated: 2026-04-19_
+_Last updated: 2026-04-20_
 
 Active and shipped projects. Claude: when I mention a project by name, check here first.
 
@@ -41,12 +41,27 @@ Active and shipped projects. Claude: when I mention a project by name, check her
 - **Billing:** WarriorPlus + JVZoo IPN (not Whop/Stripe — the IM crowd buys through those platforms).
 - **Status:** In build.
 
+## apps.bizapp.club
+
+- **Domain:** `apps.bizapp.club` (dashboard) + `<name>.bizapp.club` (flat child-app URLs)
+- **Repo:** github.com/moshbari/apps-bizapp-club (public)
+- **Pitch:** Coolify-native rebuild of the original HestiaCP app-deployer. Single-container Node/Express that serves the dashboard plus Host-header-routed child apps (Node apps and static HTML apps).
+- **Stack:** Node/Express, file-backed JSON store, scrypt password hashing, Coolify on Hetzner, Traefik for TLS.
+- **Parent domain split:** `PARENT_DOMAIN=apps.bizapp.club` (dashboard host), `APP_DOMAIN=bizapp.club` (child-app suffix). They differ by design — dashboard lives under `apps.` but child apps are flat under the root. See `URL_CONVENTIONS.md`.
+- **DNS:** Namecheap registrar, manual A records (no Cloudflare for this zone yet). `apps.bizapp.club` A → server IP; `*.bizapp.club` wildcard A → server IP; legacy `*.apps.bizapp.club` wildcard can be cleaned up. See `COOLIFY_API_QUIRKS.md` for the domain-update dance.
+- **Reserved subdomains:** `apps`, `www`, `mail`, `api`, `admin`, `ftp`, `smtp`, `pop`, `imap`, `ns1`, `ns2`.
+- **Admin:** username `admin` (not an email). Password lives in `secrets.txt`.
+- **Second parent domain, not a replacement for `99dfy.com`.** When starting a new project, ask Mosh which parent domain to use.
+- **Status:** Live. Deployed via Coolify API (IP allowlist widens + reverts pattern). Next: install Coolify GitHub App for push-to-deploy.
+
 ## Notes for future projects
 
 When starting a new one, always:
 
-1. Pick a subdomain of `99dfy.com` (or a new domain if it's a separate brand).
-2. Create a GitHub repo under `moshbari/`.
-3. Deploy via Coolify — see `INFRA_HETZNER_COOLIFY.md`.
-4. If there's billing, walk `SAAS_LAUNCH_CHECKLIST.md` before calling it shipped.
-5. Add the project to this file with the same fields as Printables above.
+1. **Ask Mosh which parent domain.** Options: `99dfy.com` (default for most tools), `bizapp.club` (for bizapp-branded tools), a new domain he'll register for a standalone brand, or a subdomain of an existing brand like `heychatmate.com`. Never assume.
+2. **Ask whether it needs GHL media storage.** If yes, ask which GHL sub-account and have Mosh create a named folder in that sub-account's Media Library. Claude resolves the folder ID at runtime.
+3. Create a GitHub repo under `moshbari/` (classic PAT required — see `INFRA_HETZNER_COOLIFY.md`).
+4. Deploy via Coolify — see `INFRA_HETZNER_COOLIFY.md` and `COOLIFY_API_QUIRKS.md`.
+5. If there's billing, walk `SAAS_LAUNCH_CHECKLIST.md` before calling it shipped.
+6. Verify DNS from 3 resolvers, TLS issuer, and body content before telling Mosh it's live — see `DEBUGGING_DEPLOYMENTS.md`.
+7. Add the project to this file with the same fields as Printables above.

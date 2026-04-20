@@ -6,9 +6,12 @@ This file is here so that when Claude Code or any Claude-aware tool pulls this r
 
 Before writing code, drafting copy, or making decisions on one of Mosh's projects, fetch and read the files in this repo that apply:
 
+- Starting any new project (kickoff checklist + questions to ask) → `ZERO_TOUCH_SETUP.md`
 - Writing, UI, marketing copy → `WRITING_STYLE.md` + `UX_CLICK_ONLY.md`
+- Picking a URL or subdomain structure → `URL_CONVENTIONS.md`
 - SaaS with billing or auth → `SAAS_LAUNCH_CHECKLIST.md`
 - Deploy / infra work (Hetzner + Coolify) → `INFRA_HETZNER_COOLIFY.md`
+- Driving the Coolify REST API directly → `COOLIFY_API_QUIRKS.md`
 - Next.js on Railway / Dockerfile projects → `NEXTJS_DOCKER_RAILWAY.md`
 - Any GoHighLevel media upload work → `GHL_MEDIA_UPLOAD.md`
 - Deploy looks green but something silently isn't working → `DEBUGGING_DEPLOYMENTS.md`

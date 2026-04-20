@@ -1,6 +1,6 @@
 # Debugging deployments — "the code looks fine but something is wrong"
 
-_Last updated: 2026-04-19_
+_Last updated: 2026-04-20_
 
 ## Why this exists
 
@@ -116,6 +116,64 @@ SSH into <server> as root. Run all of these and report every output:
 
 Do all of them even if an earlier one fails. Share full output of each.
 ```
+
+## DNS + TLS verification before declaring "done"
+
+The angle where Mosh's browser hits the app is not the angle where my curl hits it. If I confirm a subdomain works from the sandbox and tell Mosh "it's live, try it," his browser may still see NXDOMAIN for up to an hour because of negative-response caching. This sequence catches the gap before the user does.
+
+### DNS from 3 resolvers, not just mine
+
+```bash
+for r in 1.1.1.1 8.8.8.8 9.9.9.9; do
+  echo "=== $r ==="
+  dig +short @$r <subdomain>.<domain> A
+done
+```
+
+All three should return the expected IP. If one is empty and the others aren't, the user's browser may be hitting the empty one. Wait for propagation or tell the user which resolver to switch to.
+
+### NXDOMAIN negative-cache risk
+
+If you queried the subdomain **before** the DNS record existed, public resolvers cache the negative response for up to the zone's SOA minimum TTL. Namecheap's default SOA minimum is `3601` seconds (~60 min). Cloudflare's is lower (~300s) but still real.
+
+Check the SOA:
+
+```bash
+dig +short SOA <domain> | awk '{print $NF}'
+```
+
+If the number is 3600+ and the subdomain was queried (and missed) recently, warn the user: "Your browser's DNS may cache the old miss for up to N minutes. Try from a different network, or wait."
+
+### TLS cert issuer — catch Traefik's fallback cert
+
+```bash
+echo | openssl s_client -servername <host> -connect <host>:443 2>/dev/null \
+  | openssl x509 -noout -issuer -subject
+```
+
+- Issuer = `R3` / `R10` / `R11` / Let's Encrypt → real cert, routing works ✅
+- Issuer = `TRAEFIK DEFAULT CERT` → Traefik has no route for this host. The cert request fell through to the fallback. Means: container didn't restart after FQDN attach, or Coolify didn't regenerate labels. See `COOLIFY_API_QUIRKS.md`.
+- Self-signed / expired → misconfigured TLS.
+
+### Body content, not just status
+
+HTTP 200 with the wrong content is a common mode:
+
+```bash
+curl -s https://<host>/ | head -c 200
+```
+
+Compare the first 200 bytes to what you expect. If it's Traefik's default 404 page or Coolify's placeholder, the server answered but the app isn't running there.
+
+### Don't say "done" until all four pass
+
+Every "it's working, try it" message should be preceded by:
+1. SOA minimum check (warn user if ≥3600 and negative cache is likely)
+2. Lookup from at least 3 external resolvers
+3. openssl issuer check
+4. Body snippet match
+
+If any of these reveal mixed results, warn the user about the specific caching window up front rather than letting them find it and push back.
 
 ## Checklist for any "it's not working" thread
 
