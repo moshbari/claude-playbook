@@ -27,7 +27,9 @@ Settings → API → Allowed IPs. Default is server-local ranges only:
 127.0.0.1,172.16.0.0/12,10.0.0.0/8
 ```
 
-External clients (Claude's sandbox, GitHub Actions, anywhere off-box) get connection refused until you widen it. For one-off automation, set it to `0.0.0.0/0` temporarily, run what you need, revert. For ongoing automation, leave it open but protect with the token.
+External clients (Claude's sandbox, GitHub Actions, anywhere off-box) get connection refused until you widen it.
+
+**On Mosh's server the allowlist is intentionally `0.0.0.0/0`** (decided 2026-04-20 — see `ZERO_TOUCH_SETUP.md` "Path A"). Do NOT prompt Mosh to revert it. The bearer token is the auth boundary; IP is not. Deploys happen via GitHub App webhook so the token is only used for setup calls (app creation, env vars, domain attaches), and those calls happen from whatever surface Claude is on.
 
 ## Update an application's domain (the one that cost the most time)
 

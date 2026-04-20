@@ -53,4 +53,4 @@ When Claude and I hit a new lesson — a mistake, a surprise, a thing that took 
 
 Mosh (engrmoshbari@gmail.com).
 
-_Last updated: 2026-04-20 (added ZERO_TOUCH_SETUP, COOLIFY_API_QUIRKS, URL_CONVENTIONS; DEBUGGING_DEPLOYMENTS gained a DNS + TLS section; INFRA_HETZNER_COOLIFY got GitHub automation notes; PROJECTS got apps.bizapp.club and multi-domain kickoff rule)_
+_Last updated: 2026-04-20 (added ZERO_TOUCH_SETUP, COOLIFY_API_QUIRKS, URL_CONVENTIONS; DEBUGGING_DEPLOYMENTS gained a DNS + TLS section; INFRA_HETZNER_COOLIFY got GitHub automation notes; PROJECTS got apps.bizapp.club and multi-domain kickoff rule; Path A decision locked in — Coolify API allowlist stays at 0.0.0.0/0 by design, do not revert)_

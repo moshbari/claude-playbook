@@ -121,12 +121,25 @@ Everything else Claude handles.
 
 Never quote a secret from memory. Memory records what was true when it was written; live services change.
 
+## Decision: Coolify API allowlist = `0.0.0.0/0` (Path A)
+
+Decided 2026-04-20 after a painful session where Claude kept asking Mosh to widen and re-lock the allowlist per operation.
+
+Coolify's default allowlist (`127.0.0.1,172.16.0.0/12,10.0.0.0/8`) blocks every call from outside the server. Cowork's sandbox IP shifts, so Claude cannot reliably be allowlisted. Two honest choices:
+
+- **Path A (chosen):** Leave allowlist at `0.0.0.0/0`. Coolify still requires the bearer token on every request, so this is not "unauthenticated." It is "same auth model as every other SaaS API." Small attack-surface widening in exchange for true zero-touch on every Claude surface (web, Cowork, Claude Code, mobile).
+- Path B (rejected): Keep allowlist locked, SSH to the box from Claude Code and hit `localhost:8000`. Works on Claude Code only — breaks on Cowork. Rejected because zero-touch has to hold on every surface.
+
+**Consequence:** never prompt Mosh to widen/re-lock the allowlist. It stays wide. Protect via token rotation (annually, or immediately on leak suspicion), not via IP.
+
+Deploys themselves go through the GitHub App webhook path — no API token involved. The open API is only used for app creation, env-var updates, and domain attaches during setup.
+
 ## What stays manual, forever
 
 1. Telling Claude what to build.
 2. Creating the GHL media folder per project (Mosh does this in the GHL UI; takes 30 seconds).
 3. Answering 2-option UX questions.
 4. Reviewing before Claude publishes anything under Mosh's name (posts, emails).
-5. Rotating tokens when they expire (Cloudflare, GitHub PAT, GHL PIT — all annually).
+5. Rotating tokens when they expire (Cloudflare, GitHub PAT, GHL PIT, Coolify API — all annually).
 
 Everything else Claude handles.
