@@ -1,6 +1,6 @@
 # Debugging deployments — "the code looks fine but something is wrong"
 
-_Last updated: 2026-04-20_
+_Last updated: 2026-05-03_
 
 ## Why this exists
 
@@ -184,6 +184,32 @@ Every "it's working, try it" message should be preceded by:
 4. Body snippet match
 
 If any of these reveal mixed results, warn the user about the specific caching window up front rather than letting them find it and push back.
+
+## Git/GitHub gotchas that look like deployment failures
+
+### `GH007: Your push would publish a private email address`
+
+If your GitHub account has email privacy enabled (Settings → Emails → "Block command line pushes that expose my email"), pushing a commit authored with your real email gets rejected at the remote with `GH007`. The push fails, no commit lands, the deploy is skipped — looks like a CI hiccup, isn't.
+
+Fix: configure git in any clone (or globally) to use the noreply email:
+
+```bash
+git config user.email "<userid>+<username>@users.noreply.github.com"
+# Mosh: 180724814+moshbari@users.noreply.github.com
+```
+
+Find your user id at `https://api.github.com/users/<username>` (the `id` field). If you already committed with the wrong email, amend before retrying:
+
+```bash
+git commit --amend --no-edit --reset-author
+git push
+```
+
+This bites whenever a fresh clone, agent sandbox, or CI runner sets up git from scratch — anywhere `git config user.email` hasn't been seeded with the noreply form.
+
+### Cowork/agent sandbox: the workspace folder is not always a git repo
+
+When working through Cowork (or any agent that mounts a "project folder"), the mounted path is often just a copy of files — not a git repo with `.git/` and a remote. Don't `git pull` / `git push` from the workspace path; clone fresh from GitHub into a scratch dir, edit there, push from there. Then the user pulls on their real machine via their normal workflow. Trying to commit from the workspace-folder copy silently does nothing useful.
 
 ## Checklist for any "it's not working" thread
 

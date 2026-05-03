@@ -1,6 +1,6 @@
 # GoHighLevel media library upload
 
-_Last updated: 2026-04-19_
+_Last updated: 2026-05-03_
 
 ## Why this exists
 
@@ -50,14 +50,25 @@ Max size: **500 MB for videos, 25 MB for other file types.**
 7. **Location ID** is in your browser URL: `app.gohighlevel.com/v2/location/THIS_PART_HERE/...`
 8. Go to Media Library in that sub-account and create your target folder. Note the exact name.
 
-## Folder placement — two variants, both work, don't mix them
+## Folder placement — one recipe, works for curl AND fetch
 
-We have two working implementations that use different field names. Pick one and stick to it.
+There is exactly one reliable way to land a file in a specific folder. Send these three fields together as **multipart form fields** (in addition to `file`, `hosted=false`, `name`):
 
-- **curl path (StepWise, EveryLink, recommended):** pass `parentId=<FOLDER_ID>` as a **form field**.
-- **fetch path (AI Image Creator):** append `?folderId=<FOLDER_ID>` as a **query parameter** on the URL.
+- `parentId = <FOLDER_ID>`
+- `altId    = <LOCATION_ID>`
+- `altType  = "location"`
 
-What does NOT work: `folderId` as a form field. The API returns HTTP 200 with a real `fileId`, but the file lands at root. We hit this twice — "the upload looks successful, why isn't it in the folder?" is the signature. A 200 response is not proof of correct folder placement.
+This works whether you use curl-via-execSync or Node `fetch()`. Don't omit `altId`/`altType` — they are required for folder routing on PIT-authed uploads, even though the docs imply they're optional.
+
+What does NOT work (each verified):
+
+- `folderId` as a multipart form field — 200 OK, lands at root.
+- `?folderId=<ID>` as a URL query param **without** `altId`+`altType` form fields — also 200 OK, also lands at root. AI Image Creator shipped this twice (commits `5154223` and `4649d61`) and silently uploaded to root for two weeks before anyone noticed.
+- The `name` field with a folder path prefix (`folder/photo.png`) — slashes are not directory separators, you just get a literal filename containing a slash.
+
+The signature of the bug: "the upload looks successful, the URL works, but the file isn't in my folder." A 200 response with a real `fileId` is **not** proof of correct folder placement.
+
+Belt-and-suspenders option: also include `?folderId=<ID>` on the URL. It's harmless when present alongside the form fields and rules out one more class of weirdness.
 
 **Do NOT try to upload first and move after.** Every update/move endpoint on `/medias/` returns 404 for PIT tokens. Confirmed failures on `PUT /medias/{fileId}`, `PUT /medias/files/{fileId}`, `PATCH /medias/files/{fileId}`, `POST /medias/files/bulk-update`. Always include `parentId` at upload time.
 
@@ -106,8 +117,24 @@ Match by name in the response, grab the id.
 | 5 | `@gohighlevel/api-client` SDK media methods | Methods don't exist | Raw curl / fetch |
 | 6 | Listing without `type` param | 422 "type must be a string" | Always include `type=folder` or `type=file` |
 | 7 | `hosted=true` URL upload | 400 "Unsupported content type" | Upload file bytes directly |
-| 8 | `folderId` as form field | 200 OK but file lands at root | Use `parentId` (form field) or `?folderId=` (query param) |
+| 8 | `folderId` as form field, OR `?folderId=` URL query without `altId`+`altType` form fields | 200 OK with real fileId, file lands at root | Send `parentId`+`altId`+`altType=location` as form fields together. Hit this on aipic twice (commits 5154223, 4649d61) — silent for two weeks. |
 | 9 | curl `-F 'file=@path'` on `node:20-slim` | INVALID_FILE_TYPE — slim image has no `/etc/mime.types`, curl sends `application/octet-stream` | Set MIME explicitly: `-F "file=@path;type=audio/mpeg"` (or whatever the real type is). Bites any slim base — Alpine, debian-slim, distroless. |
+
+## Symptom → diagnosis lookup
+
+Quick recognition table for the failure modes. If you see the symptom on the left, jump to the fix on the right before debugging from scratch.
+
+| Symptom | Diagnosis |
+|---|---|
+| Upload returns 200, response includes a real `fileId` and CDN URL, but the file is at the **root** of the media library instead of your folder | You're missing `altId` + `altType` form fields, OR you're using `folderId` (as form field or URL query) instead of `parentId`. Send all three: `parentId`, `altId`, `altType="location"`. |
+| `400 Unsupported content type` | Either you sent JSON (must be multipart/form-data) or you sent `hosted=true` with a URL (must be `hosted=false` with bytes). |
+| `400 Unexpected end of form` | Node's native `FormData`+`fetch` or the `form-data` npm package — multipart boundary isn't formatted the way GHL expects. Switch to `curl` via `child_process.execSync`. |
+| `401 IAM Service` | Node `fetch()` quirk on certain GHL endpoints. Same call works via `curl`. Swap to curl-via-execSync. |
+| `INVALID_FILE_TYPE` for an obviously valid file | Slim Docker base (`node:20-slim`, Alpine, distroless) has no `/etc/mime.types`, so curl sends `application/octet-stream`. Set MIME explicitly: `-F "file=@path;type=audio/mpeg"`. |
+| `422 type must be a string` listing files/folders | Missing `type=folder` (or `type=file`) on the list endpoint. Always include it. |
+| Folder ID returns `undefined` when parsing the list response | The id is in `item._id`, not `item.id`. Use `item._id \|\| item.id`. |
+| Code/build is fine, no errors, but uploads are silently skipped at runtime | `isGHLConfigured()` is returning false. Env vars didn't reach the container. Check `docker exec <app> env \| grep GHL`. See `DEBUGGING_DEPLOYMENTS.md` step 1. |
+| Upload works on your laptop, fails in production | Either MIME (slim base, see above) or env vars not in container. Run the verification sequence in `DEBUGGING_DEPLOYMENTS.md` before assuming the code is wrong. |
 
 ## MIME type — must be set explicitly on slim Docker bases
 
@@ -212,4 +239,4 @@ Works in 2 seconds, no container shell, no DB query. Add to the post-deploy chec
 - **curl + form field `parentId` (recommended, Node on VPS):** `moshbari/video-processor-railway`'s `ghl-uploader.js` (the StepWise origin). Also lives on the VPS at `/opt/stepwise-video/ghl-uploader.js` — **this file exists only on the VPS, never committed to GitHub.** TODO: commit it.
 - **curl + form field `parentId` (Next.js serverless):** `src/app/api/ghl-upload/route.ts` in `moshbari/everylink`. Writes to `/tmp/ghl-uploads/<uuid>_<safename>`, 2-minute timeout, cleans up in `finally`, 100 MB cap, MIME type whitelist.
 - **curl + form field `parentId` + universal storage pointer (Next.js standalone):** `src/lib/ghl.ts` in `moshbari/printables`. Small module: `isGhlConfigured()`, `resolveFolderId()` (caches for process lifetime), `uploadToGhl()` (throws), `tryUploadToGhl()` (returns null). Called from `src/app/api/generate/route.ts` via `Promise.all` for ZIP + PDF + cover. Read routes (`/api/download/[id]`, `/api/file/[id]/[name]`) branch on `startsWith("http")` and 302 redirect. Reference for any project migrating disk → GHL.
-- **fetch + query param `folderId`:** `src/lib/ghl.ts` in the AI Image Creator project. Web FormData + Blob, separate helpers for Buffer / URL / base64 inputs.
+- **fetch + form fields `parentId`+`altId`+`altType` (Next.js, no curl/exec):** `src/lib/ghl.ts` in `moshbari/aipic`. Web FormData + Blob, separate helpers for Buffer / URL / base64 inputs. Use this when the runtime can't shell out to curl (some Node serverless platforms, Cowork sandboxes). Earlier versions of this file used `?folderId=` and silently uploaded to root — fixed 2026-05-03.
