@@ -22,6 +22,7 @@ At the start of a new project or task, Claude should fetch this repo's `README.m
 - **Any writing, UI, or product work** → read `WRITING_STYLE.md` and `UX_CLICK_ONLY.md`.
 - **Picking a URL / subdomain structure** → read `URL_CONVENTIONS.md`.
 - **Shipping a SaaS with billing or auth** → read `SAAS_LAUNCH_CHECKLIST.md`.
+- **Whop billing specifically (webhooks, signatures, checkout URLs)** → read `WHOP_WEBHOOKS.md`.
 - **Deploying anything** → read `INFRA_HETZNER_COOLIFY.md`.
 - **Driving the Coolify REST API directly** → read `COOLIFY_API_QUIRKS.md`.
 - **Uploading images/files to GoHighLevel media library** → read `GHL_MEDIA_UPLOAD.md`.
@@ -43,6 +44,7 @@ When Claude and I hit a new lesson — a mistake, a surprise, a thing that took 
 | `UX_CLICK_ONLY.md` | Click-only UX rule. Grandma-with-thick-glasses test. |
 | `URL_CONVENTIONS.md` | Flat subdomains over nested. Why `<name>.brand.com` beats `<name>.app.brand.com`. |
 | `SAAS_LAUNCH_CHECKLIST.md` | Pre-launch checklist for SaaS with billing webhooks and auth. |
+| `WHOP_WEBHOOKS.md` | Whop deep-dive — Svix signature scheme, secret format, checkout URL gotchas, idempotency. |
 | `INFRA_HETZNER_COOLIFY.md` | My standard deploy stack. Hetzner + Coolify + Cloudflare DNS + GitHub automation. |
 | `COOLIFY_API_QUIRKS.md` | Every field name and sequencing trap in Coolify's REST API. `domains` vs `fqdn`, restart-after-fqdn, storage types, IP allowlist, webhook signatures. |
 | `NEXTJS_DOCKER_RAILWAY.md` | Next.js on Railway with a Dockerfile — build-time env vars, lazy-init clients, missing system binaries. |
@@ -55,4 +57,4 @@ When Claude and I hit a new lesson — a mistake, a surprise, a thing that took 
 
 Mosh (engrmoshbari@gmail.com).
 
-_Last updated: 2026-05-03 (GHL: rewrote folder-placement section — `?folderId=` URL query is unreliable too, single recipe is parentId+altId+altType form fields; added symptom→diagnosis lookup table; DEBUGGING gained Git/GitHub gotchas section — GH007 email-privacy push rejection + workspace-folder-not-a-repo trap. Earlier: added ZERO_TOUCH_SETUP, COOLIFY_API_QUIRKS, URL_CONVENTIONS, COWORK_QUIRKS; DEBUGGING_DEPLOYMENTS gained DNS+TLS section and docker-exit-255 retry note; INFRA_HETZNER_COOLIFY got GitHub automation notes + same-SHA-redeploy and log-link quirks; PROJECTS got apps.bizapp.club and multi-domain kickoff rule; Path A locked in — Coolify API allowlist stays at 0.0.0.0/0 by design, do not revert)_
+_Last updated: 2026-05-08 (GoNoGo Whop credit-pack: new WHOP_WEBHOOKS.md covers Svix signature scheme + metadata-drop + product-page-vs-checkout URL trap; SAAS_LAUNCH_CHECKLIST gained items 16-24; PROJECTS got GoNoGo). Earlier: 2026-05-03 (GHL: rewrote folder-placement section — `?folderId=` URL query is unreliable too, single recipe is parentId+altId+altType form fields; added symptom→diagnosis lookup table; DEBUGGING gained Git/GitHub gotchas section — GH007 email-privacy push rejection + workspace-folder-not-a-repo trap. Earlier: added ZERO_TOUCH_SETUP, COOLIFY_API_QUIRKS, URL_CONVENTIONS, COWORK_QUIRKS; DEBUGGING_DEPLOYMENTS gained DNS+TLS section and docker-exit-255 retry note; INFRA_HETZNER_COOLIFY got GitHub automation notes + same-SHA-redeploy and log-link quirks; PROJECTS got apps.bizapp.club and multi-domain kickoff rule; Path A locked in — Coolify API allowlist stays at 0.0.0.0/0 by design, do not revert)_

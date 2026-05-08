@@ -1,6 +1,6 @@
 # Projects
 
-_Last updated: 2026-04-20_ (listen.bizapp.club added)
+_Last updated: 2026-05-08_ (GoNoGo added)
 
 Active and shipped projects. Claude: when I mention a project by name, check here first.
 
@@ -68,6 +68,22 @@ Active and shipped projects. Claude: when I mention a project by name, check her
 - **Coolify app UUID:** `j5fxh5htxnrjozyjgn54neog`. Persistent volume mounted at `/app/data` for the SQLite DB. Deploy via `POST /api/v1/deploy?uuid=<uuid>&force=true`.
 - **Not committed to repo:** `.env` (Coolify owns the runtime env).
 - **Status:** Live. Verified end-to-end 2026-04-20 — MP3 streams from GHL CDN with `content-type: audio/mpeg` and range support.
+
+## GoNoGo
+
+- **Domain:** `gonogo.99dfy.com` (frontend, Lovable) + `gonogo-api.99dfy.com` (orchestrator API, Coolify)
+- **Repos:** `github.com/moshbari/gonogoyes` (frontend, private) + `github.com/moshbari/gonogo-orchestrator` (backend, private)
+- **Pitch:** Type a business idea, get a GO / CAUTION / NO_GO verdict in 60 seconds. 5 AI agents (Market Researcher, Competition Scout, Financial Modeler, Customer Profiler, Team Lead) analyze in parallel against real local data — US Census, Google Places, BLS, Google Trends.
+- **Target customer:** First-time business owners. Bangladeshi diaspora in US community hubs (MI, NJ, NY, TX, CA, VA, IL) is the seed audience.
+- **Why it exists:** Marketing engine for the $497 workshop. The app itself isn't the profit center — cheap shareable verdicts pull people into the workshop funnel.
+- **Stack:** Lovable React/Vite frontend + Node/Express orchestrator on Coolify (Hetzner) + Supabase Postgres (shared `yuqeqricenygpsrdfswx` project, dedicated `gonogo` schema only) + Anthropic API (Sonnet specialists, Opus team lead) + Resend SMTP.
+- **Auth:** Supabase magic-link email + Google OAuth (PKCE).
+- **User tiers:** trial (3 free runs) / full (paid) / admin (unlimited) / disabled. `gonogo.user_profiles` table holds `runs_used`, `runs_limit`, `role`.
+- **Billing:** Whop, $7 / 10-credit pack (live test was $1), product `prod_3cCKEsbBOPW1e`, plan `plan_0pvcREpBai6z8`, company `biz_6lPb8XIs7llD4t`. See `WHOP_WEBHOOKS.md` for the full integration story.
+- **Webhook URL:** `https://gonogo-api.99dfy.com/whop/webhook` (path matters — see `WHOP_WEBHOOKS.md`).
+- **Critical Supabase rule:** project `yuqeqricenygpsrdfswx` is shared with FreedomClockV25Sep25 and other apps. **Only touch the `gonogo` schema.** Never modify `public` or any pre-existing table, policy, function, or auth setting.
+- **Coolify app uuid:** `csajucyjxzb8nztpy9o75vji`.
+- **Status:** Live. End-to-end verified 2026-05-08 — real $1 Whop purchase → Svix webhook → +10 credits landed automatically on a trial account, role auto-promoted to `full`.
 
 ## Notes for future projects
 

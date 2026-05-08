@@ -10,6 +10,7 @@ Before writing code, drafting copy, or making decisions on one of Mosh's project
 - Writing, UI, marketing copy → `WRITING_STYLE.md` + `UX_CLICK_ONLY.md`
 - Picking a URL or subdomain structure → `URL_CONVENTIONS.md`
 - SaaS with billing or auth → `SAAS_LAUNCH_CHECKLIST.md`
+- Whop billing specifically (webhooks, signatures, checkout URLs) → `WHOP_WEBHOOKS.md`
 - Deploy / infra work (Hetzner + Coolify) → `INFRA_HETZNER_COOLIFY.md`
 - Driving the Coolify REST API directly → `COOLIFY_API_QUIRKS.md`
 - Next.js on Railway / Dockerfile projects → `NEXTJS_DOCKER_RAILWAY.md`
