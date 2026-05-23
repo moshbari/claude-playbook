@@ -27,6 +27,8 @@ At the start of a new project or task, Claude should fetch this repo's `README.m
 - **Driving the Coolify REST API directly** → read `COOLIFY_API_QUIRKS.md`.
 - **Uploading images/files to GoHighLevel media library** → read `GHL_MEDIA_UPLOAD.md`.
 - **Any Next.js project on Railway (especially with a Dockerfile)** → read `NEXTJS_DOCKER_RAILWAY.md`.
+- **Adding a custom domain on Railway (or one stuck on VALIDATING_OWNERSHIP)** → read `RAILWAY_CUSTOM_DOMAINS.md`.
+- **Adding a new app to a Supabase project that other apps already use** → read `SUPABASE_SHARED_PROJECT.md`.
 - **"It deployed but something silently isn't working"** → read `DEBUGGING_DEPLOYMENTS.md`.
 - **Working in Cowork specifically** → read `COWORK_QUIRKS.md`.
 - **Adding a new lesson** → append to the right file and bump the "Last updated" line at the top.
@@ -48,6 +50,8 @@ When Claude and I hit a new lesson — a mistake, a surprise, a thing that took 
 | `INFRA_HETZNER_COOLIFY.md` | My standard deploy stack. Hetzner + Coolify + Cloudflare DNS + GitHub automation. |
 | `COOLIFY_API_QUIRKS.md` | Every field name and sequencing trap in Coolify's REST API. `domains` vs `fqdn`, restart-after-fqdn, storage types, IP allowlist, webhook signatures. |
 | `NEXTJS_DOCKER_RAILWAY.md` | Next.js on Railway with a Dockerfile — build-time env vars, lazy-init clients, missing system binaries. |
+| `RAILWAY_CUSTOM_DOMAINS.md` | Railway custom domains — the TXT verification trap, targetPort 502 trap, project-token vs PAT, full GraphQL endpoints. |
+| `SUPABASE_SHARED_PROJECT.md` | Multiple apps in ONE Supabase project — table prefix rule, INSERT RLS policy, SMTP bypass via Resend, redirectTo trailing-slash trap. |
 | `GHL_MEDIA_UPLOAD.md` | GoHighLevel media library upload — the endpoint, auth, folder traps, env var traps. |
 | `DEBUGGING_DEPLOYMENTS.md` | Verification sequence for silent-failure bugs, including DNS + TLS checks before saying "done." |
 | `COWORK_QUIRKS.md` | Cowork-specific gotchas — Chrome MCP's two permission gates, sandbox IP drift, when to stop fighting. |
