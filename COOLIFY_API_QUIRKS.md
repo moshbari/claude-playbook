@@ -84,6 +84,37 @@ POST /api/v1/applications/{uuid}/envs
 
 Do **NOT** include `is_build_time` — it's documented in some places but the API rejects the payload with a validation error. If you need build-time vars (next build, etc.), declare them as ARG+ENV in your Dockerfile instead of toggling a Coolify flag.
 
+### Multi-line env var values break Docker's parser at build time
+
+This bit on the ShareZPresso APNs key (2026-05-25). Coolify injects EVERY env var as a Dockerfile `ARG` instruction at build time, even when you don't ask for build-time. A multi-line value (e.g. a `.p8` PEM, an SSH key, a multi-line cert) makes `ARG FOO='-----BEGIN…` open a quote that never closes, and the next line of the PEM becomes an "unknown instruction" — Docker fails the whole build in <10 seconds. The Coolify API doesn't surface this error; you have to read the live deploy log in the Coolify UI.
+
+Symptoms:
+- Deploy fails consistently in 6–10 seconds
+- `GET /api/v1/deployments/{uuid}` returns `status: failed` with NO logs
+- Other apps on the same Coolify deploy fine
+- UI deploy log shows `dockerfile parse error on line N: unknown instruction: <garbled string>`
+
+Fix: never put a multi-line value in a Coolify env var. Base64-encode it instead and decode in your app:
+
+```js
+// In your app code (Node example):
+const raw = process.env.MY_PEM_BASE64
+  ? Buffer.from(process.env.MY_PEM_BASE64, 'base64').toString('utf8')
+  : process.env.MY_PEM || '';
+```
+
+```bash
+# When setting the env var:
+base64 < my.p8 | tr -d '\n' | pbcopy
+# Then paste as the single-line value of MY_PEM_BASE64 in Coolify.
+```
+
+The `is_literal: true` flag does NOT save you here — Coolify still injects as ARG regardless, and ARG values cannot span multiple lines no matter how they're quoted.
+
+### Stop+Start cycle on a broken deploy state can take the running container down
+
+If a deploy keeps failing and you try `POST /applications/{uuid}/stop` to clear stuck state, the OLD running container is terminated and the new builds keep failing for the same reason — you've now lost your last working container with no way to revive it via API short of fixing the underlying problem. Lesson: diagnose the failure BEFORE trying stop/start. Read the deploy log in the Coolify UI first.
+
 ## Storage / volumes
 
 `type` only accepts `persistent`. Every other value returns validation error:
