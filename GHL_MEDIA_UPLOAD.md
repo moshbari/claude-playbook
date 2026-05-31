@@ -48,6 +48,7 @@ Max size: **500 MB for videos, 25 MB for other file types.**
 5. Under Scopes, tick only: **View Medias** and **Edit Medias**.
 6. Save. Copy the token that appears (starts with `pit-`).
 7. **Location ID** is in your browser URL: `app.gohighlevel.com/v2/location/THIS_PART_HERE/...`
+   - **Do NOT eyeball it off a screenshot.** Location ids are random base62 and routinely contain `I`/`l`/`1` and `O`/`0`, which are indistinguishable in most UI fonts. On Book Factory (2026-05-31) we read `...Q`**`l`**`YNa` off a screenshot when the real id was `...Q`**`I`**`YNa`; uploads silently went to root and folder listing 401'd for a full debugging loop. Copy-paste the id from the address bar, or let the API tell you the truth: the upload/list 401 error literally prints it — `"Your token grants access to location <REAL_ID> but you're requesting <WRONG_ID>"`. Trust that string over your eyes.
 8. Go to Media Library in that sub-account and create your target folder. Note the exact name.
 
 ## Folder placement — one recipe, works for curl AND fetch
@@ -169,6 +170,7 @@ Quick recognition table for the failure modes. If you see the symptom on the lef
 | `400 Unsupported content type` | Either you sent JSON (must be multipart/form-data) or you sent `hosted=true` with a URL (must be `hosted=false` with bytes). |
 | `400 Unexpected end of form` | Node's native `FormData`+`fetch` or the `form-data` npm package — multipart boundary isn't formatted the way GHL expects. Switch to `curl` via `child_process.execSync`. |
 | `401 IAM Service` | Node `fetch()` quirk on certain GHL endpoints. Same call works via `curl`. Swap to curl-via-execSync. |
+| `401 "Your token grants access to location X but you're requesting Y"` on list/upload | Wrong location id — almost always an `I`/`l`/`1` or `O`/`0` misread from a screenshot. The error prints the REAL id (X); copy it verbatim into `GHL_LOCATION_ID`. Uploads may still succeed (endpoint trusts the token's location) while listing/folder-routing fails — a confusing split symptom. |
 | `INVALID_FILE_TYPE` for an obviously valid file | Slim Docker base (`node:20-slim`, Alpine, distroless) has no `/etc/mime.types`, so curl sends `application/octet-stream`. Set MIME explicitly: `-F "file=@path;type=audio/mpeg"`. |
 | `422 type must be a string` listing files/folders | Missing `type=folder` (or `type=file`) on the list endpoint. Always include it. |
 | Folder ID returns `undefined` when parsing the list response | The id is in `item._id`, not `item.id`. Use `item._id \|\| item.id`. |
