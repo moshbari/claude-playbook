@@ -1,6 +1,6 @@
 # GoHighLevel media library upload
 
-_Last updated: 2026-05-03_
+_Last updated: 2026-05-31_
 
 ## Why this exists
 
@@ -97,6 +97,45 @@ Match by name in the response, grab the id.
 
 **Gotcha that cost us a full debugging session:** the folder id is in `item._id` (with underscore), **not** `item.id`. `item.id` is `undefined`. Always parse as `item._id || item.id` to be safe across response shapes.
 
+## Best practice: resolve the folder id from its NAME at runtime — never hand-hunt it
+
+**The folder id is invisible in the GHL UI.** It is NOT in the URL (the media-library URL is `app.gohighlevel.com/v2/location/<LOCATION_ID>/media-storage` — that's the *location* id, no folder id), NOT on the folder tile, NOT in any panel or breadcrumb. The list-folders call above is the *only* way to get it. This sends every operator — and us — in circles: "which one is the folder id?" There is nothing on screen to copy. (Confirmed again on Book Factory, 2026-05-31: the owner had the right folder open, breadcrumb `Home > bookfactory.99dfy.com`, and still could not find the id, because it is genuinely not shown.)
+
+So **stop asking a human for the folder id.** Ask for the folder **name** — which the user CAN read off the media-library breadcrumb — and resolve the id in code, lazily, on first upload. Cache it for the process lifetime.
+
+Config becomes `GHL_API_KEY` + `GHL_LOCATION_ID` + **`GHL_FOLDER_NAME`**. Keep `GHL_FOLDER_ID` as an optional override that short-circuits resolution (use it only if you have duplicate folder names).
+
+```js
+let _folderCache = null;
+async function resolveFolderId(c) {
+  if (c.folderId) return c.folderId;            // explicit id wins
+  if (!c.folderName) return "";                 // no folder → upload to root
+  if (_folderCache?.name === c.folderName) return _folderCache.id;
+  const url = `https://services.leadconnectorhq.com/medias/files`
+    + `?altId=${encodeURIComponent(c.locationId)}&altType=location`
+    + `&type=folder&sortBy=createdAt&sortOrder=desc&limit=100`;   // type=folder is mandatory (422 without)
+  const data = await curlJson(["-s", "--max-time", "30", url,
+    "-H", `Authorization: Bearer ${c.token}`, "-H", "Version: 2021-07-28"]);
+  const arr = Array.isArray(data) ? data : (data.files || data.folders || data.medias || []);
+  const match = arr.find(it => (it.name || "").toLowerCase() === c.folderName.toLowerCase());
+  const id = match ? (match._id || match.id || "") : "";          // _id, not id — see gotcha above
+  _folderCache = { name: c.folderName, id };
+  if (!id) console.log(`[GHL] folder "${c.folderName}" not found — uploading to root`);  // never fail silently
+  return id;
+}
+```
+
+Feed the resolved id into the upload as `parentId` (with `altId` + `altType=location`, as always).
+
+Why this is the right default:
+
+- **The id is unfindable by a human** — the breadcrumb shows the folder *name*, never the id. Asking for the id guarantees a support loop. The name is the only thing the operator can actually see and copy.
+- **One API call, cached** — negligible cost, resolved lazily on the first upload, reused for the process lifetime.
+- **Onboarding shrinks to two clicks of input:** the operator pastes the `pit-` token and confirms the folder name they already see on screen. No DevTools, no network-tab spelunking, no id hunting.
+- **Reuses the rules above** — `type=folder` mandatory, id is `item._id`. This just wraps them so a human is never in the loop.
+
+Reference: Book Factory's `web/lib/ghl.js` on the Contabo VPS ships exactly this.
+
 ## Endpoints that do NOT work (each verified by failing)
 
 - `/medias/upload` (no `-file` suffix) — different endpoint, PITs not accepted.
@@ -154,7 +193,8 @@ Reference: `listen-bizapp-club/lib/ghl.js` hardcodes `;type=audio/mpeg` because 
 
 - `GHL_API_KEY` — the PIT token (`pit-<uuid>`)
 - `GHL_LOCATION_ID` — sub-account location id
-- `GHL_FOLDER_ID` — folder id (optional; root if omitted)
+- `GHL_FOLDER_NAME` — **preferred:** folder name as shown in the media-library breadcrumb (e.g. `bookfactory.99dfy.com`); the code resolves it to an id at runtime (see "resolve the folder id from its NAME" above). The operator can read this off the screen — the id they cannot.
+- `GHL_FOLDER_ID` — optional explicit override; skips name resolution. Use only when folder names collide. Root if both are omitted.
 
 Pick one name per project and stick with it. I've seen `GHL_FOLDER_ID` and `GHL_MEDIA_FOLDER` used interchangeably — don't mix them inside a single codebase.
 
