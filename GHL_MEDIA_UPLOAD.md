@@ -268,6 +268,28 @@ Interpret the result:
 
 Works in 2 seconds, no container shell, no DB query. Add to the post-deploy checklist.
 
+## Zero-persistent-storage + self-describing names (Book Factory, 2026-05-31)
+
+A stricter variant of the migration above: the owner wanted **no persistent files on the server at all** — every artifact (final PDF, AI-generated images, AND the user's own uploaded images) lives only in GHL. The patterns that made it work:
+
+**1. Push every image, not just the final doc.** The engine makes per-chapter art and accepts creator-uploaded screenshots; both go to GHL. The rendered PDF still bakes images in (Puppeteer rasterises them), so the PDF stays self-contained — the per-image uploads exist for a browsable, reusable media library.
+
+**2. Self-describing names: `<email>__<descriptor>.<ext>`.** GHL's media library is a flat pool shared across many apps/users, so opaque uuid filenames are useless. Stamp creator email + a human descriptor:
+- user upload → `engrmoshbari-gmail-com__dashboard-screenshot-of-the.png` (email + first 5 words of the caption)
+- AI image → `engrmoshbari-gmail-com__001_a-tired-person-sitting.png` (email + number + first 5 words of the prompt)
+- PDF → `engrmoshbari-gmail-com__the-sales-laps-system.pdf`
+Sanitise each part to `[a-z0-9-]`, join with `__`. Helper: `ghlName(email, descriptor, ext)` + `firstWords(text, 5)`.
+
+**3. Snapshot the editable SOURCE into the DB, not a file.** To allow later revisions with zero server files, store the book's source (outline, chapter text, image manifest with GHL urls, cta) as a JSON blob on the DB row — NOT as a file in GHL (its parser rejects `application/json` with INVALID_FILE_TYPE) and NOT on disk. A revision reconstructs an ephemeral scratch dir from that blob, runs the edit, re-renders, re-uploads, deletes the scratch.
+
+**4. Manifest stores GHL urls so re-renders need no local images.** The assembler reads `{file?, url?, caption?}` per image: embed the local file as a data-URI when it exists (fast/offline, during first generation), else fall back to the remote GHL url (during a revision, when the scratch has no image bytes). Puppeteer fetches the remote urls at render time.
+
+**5. Delete scratch only after a confirmed upload; never delete the only copy.** `finalizeBook` uploads the PDF and only on a real returned url does it `rm -rf` the scratch. Bulk cleanup of old books deletes a folder ONLY if its DB row has an `https://…` pdfUrl. Corollary: incomplete/abandoned runs (no final PDF) have no GHL copy *by definition* — they're junk to delete, not data to rescue. Don't try to "upload before delete" something that never finished; regenerate it instead.
+
+**6. Browser image uploads with no multer:** accept the file as a base64 data-URL in a JSON body (bump the body limit, e.g. 32 MB), write it to a `/tmp` file purely to hand to the curl uploader, then `unlink` in `finally`. No persistent path.
+
+**7. The upload endpoint trusts the token's location; listing does not.** A wrong `altId` (e.g. an `I`/`l` screenshot misread) still uploads — to the token's real location's root — while folder *listing* 401s. So "uploads work but folder routing is broken" is a classic wrong-location-id tell, not a folder bug. See the location-id gotcha above.
+
 ## Checklist before calling an upload integration shipped
 
 - [ ] `docker exec <app> env | grep GHL` shows all three vars inside the container (or `cat /opt/<project>/ghl-config.json` on VPS).
@@ -282,3 +304,4 @@ Works in 2 seconds, no container shell, no DB query. Add to the post-deploy chec
 - **curl + form field `parentId` (Next.js serverless):** `src/app/api/ghl-upload/route.ts` in `moshbari/everylink`. Writes to `/tmp/ghl-uploads/<uuid>_<safename>`, 2-minute timeout, cleans up in `finally`, 100 MB cap, MIME type whitelist.
 - **curl + form field `parentId` + universal storage pointer (Next.js standalone):** `src/lib/ghl.ts` in `moshbari/printables`. Small module: `isGhlConfigured()`, `resolveFolderId()` (caches for process lifetime), `uploadToGhl()` (throws), `tryUploadToGhl()` (returns null). Called from `src/app/api/generate/route.ts` via `Promise.all` for ZIP + PDF + cover. Read routes (`/api/download/[id]`, `/api/file/[id]/[name]`) branch on `startsWith("http")` and 302 redirect. Reference for any project migrating disk → GHL.
 - **fetch + form fields `parentId`+`altId`+`altType` (Next.js, no curl/exec):** `src/lib/ghl.ts` in `moshbari/aipic`. Web FormData + Blob, separate helpers for Buffer / URL / base64 inputs. Use this when the runtime can't shell out to curl (some Node serverless platforms, Cowork sandboxes). Earlier versions of this file used `?folderId=` and silently uploaded to root — fixed 2026-05-03.
+- **Zero-persistent-storage, all-images-to-GHL, email-stamped names, folder-by-name, DB source snapshot (Node on Contabo VPS):** `book-robot-factory` — `web/lib/ghl.js` (`ghlName`, `firstWords`, `resolveFolderId`, async-spawn curl upload, `downloadText`), `web/server.js` (`/api/upload-image`, `finalizeBook`, shared `spawnJob` for generate + revise), `src/orchestrate.js` + `src/assemble.js` (manifest entries are file-or-url). Reference for the strictest "nothing on disk" setup. Not on GitHub (VPS only).
