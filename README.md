@@ -51,7 +51,7 @@ When Claude and I hit a new lesson — a mistake, a surprise, a thing that took 
 | `INFRA_HETZNER_COOLIFY.md` | My standard deploy stack. Hetzner + Coolify + Cloudflare DNS + GitHub automation. |
 | `COOLIFY_API_QUIRKS.md` | Every field name and sequencing trap in Coolify's REST API. `domains` vs `fqdn`, restart-after-fqdn, storage types, IP allowlist, webhook signatures. |
 | `NEXTJS_DOCKER_RAILWAY.md` | Next.js on Railway with a Dockerfile — build-time env vars, lazy-init clients, missing system binaries. |
-| `FFMPEG_MEDIA_PIPELINES.md` | FFmpeg audio/video traps — sample-rate pitch-shift bug (resample before `asetrate`), volume-gated vs cut-and-stitch for A/V sync, ffprobe-verify-the-artifact, heavy re-encodes → background jobs, YouTube/VFR timeline portability, AssemblyAI vs Deepgram diarization. |
+| `FFMPEG_MEDIA_PIPELINES.md` | FFmpeg audio/video traps — sample-rate pitch-shift bug (resample before `asetrate`), time-selective effects via concat with exact-length pieces (amix OOMs at scale), ffprobe-verify-the-artifact, fail-closed renders, heavy re-encodes → background jobs, YouTube/VFR timeline portability, AssemblyAI diarization. |
 | `RAILWAY_CUSTOM_DOMAINS.md` | Railway custom domains — the TXT verification trap, targetPort 502 trap, project-token vs PAT, full GraphQL endpoints. |
 | `SUPABASE_SHARED_PROJECT.md` | Multiple apps in ONE Supabase project — table prefix rule, INSERT RLS policy, SMTP bypass via Resend, redirectTo trailing-slash trap. |
 | `GHL_MEDIA_UPLOAD.md` | GoHighLevel media library upload — the endpoint, auth, folder traps, env var traps. |
