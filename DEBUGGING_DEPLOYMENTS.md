@@ -49,6 +49,8 @@ docker exec <container> grep -rl '<unique-string-from-new-code>' /app/.next/
 
 If it's missing, the build didn't pick up the new code.
 
+**Railway tell — the "exact pre-fix value":** on Railway, a push to the tracked branch OR an env-var change triggers a redeploy that takes ~60–90 s. If you test "right after" and the output is *identical* to the pre-fix value (same number, same wrong behavior), the old container is still serving — the new code isn't live yet. Wait for the redeploy and re-test before concluding the fix failed. (Bit us on a media render: the broken audio duration came back byte-identical, which was the giveaway that the deploy simply hadn't rolled.)
+
 ### 3. Does the external API actually accept your call?
 
 Before blaming the app, test the third-party API directly from the server with `curl`. If the direct curl fails, the integration has no chance. If the curl succeeds but the app fails, the issue is somewhere between your env vars and your request construction.

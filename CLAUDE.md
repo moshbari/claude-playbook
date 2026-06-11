@@ -14,6 +14,7 @@ Before writing code, drafting copy, or making decisions on one of Mosh's project
 - Deploy / infra work (Hetzner + Coolify) → `INFRA_HETZNER_COOLIFY.md`
 - Driving the Coolify REST API directly → `COOLIFY_API_QUIRKS.md`
 - Next.js on Railway / Dockerfile projects → `NEXTJS_DOCKER_RAILWAY.md`
+- Any FFmpeg / audio-video work (cut, join, pitch, re-encode, sync, diarization) → `FFMPEG_MEDIA_PIPELINES.md`
 - Any GoHighLevel media upload work → `GHL_MEDIA_UPLOAD.md`
 - Deploy looks green but something silently isn't working → `DEBUGGING_DEPLOYMENTS.md`
 - Working from Cowork specifically (Chrome MCP walls, sandbox IP drift) → `COWORK_QUIRKS.md`
