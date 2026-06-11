@@ -34,25 +34,33 @@ The leading `aresample=48000` converts whatever comes in (44.1k, 48k, 32k, 16k, 
 
 ---
 
-## 2. Time-selective audio effects: gate the volume, don't cut-and-stitch
+## 2. Time-selective audio effects: concat with EXACT-length pieces
 
-First instinct for "disguise the audio only during these 130 windows" was: `asplit` → `atrim` each interval → process some → `concat` back together. **It drifts.** Every `atrim`/`concat` joint carries a sub-millisecond timing error, and across 130 joints on a 100-minute video those errors accumulate into seconds of A/V desync. The video stream is copied (exact); the rebuilt audio is not — so they slide apart.
+Goal: apply an effect (pitch-shift a guest's voice) only during N specific windows. Two tempting approaches, **both wrong in different ways** — and the fix is the third:
 
-**Better pattern — keep continuous, full-length tracks and gate them by time:**
+**Approach A — naive cut-and-stitch (DRIFTS).** `asplit` → `atrim` each interval → process some → `concat`. Each pitched piece is time-stretched by `atempo`, which is *not* perfectly duration-exact, so every joint carries a sub-millisecond error. Across ~130 joints on a 100-minute video those errors accumulate into noticeable A/V desync (the video is copied = exact; the rebuilt audio slides).
 
+**Approach B — volume-gated continuous tracks (SYNC-PERFECT but OOMs at scale).** Keep full-length tracks, mute by time, sum with `amix`:
 ```
-[0:a]aresample=48000,asplit=K[base0][base1]...;
-[base0]volume=0:enable='between(t,a1,b1)+between(t,a2,b2)+...'[anorm];   // untouched, muted INSIDE the windows
-[base1]<pitch chain>,volume=0:enable='lt(between(t,a1,b1)+...,1)'[ap0];  // pitched, muted OUTSIDE its windows
+[base0]volume=0:enable='between(t,a1,b1)+between(t,a2,b2)+...'[anorm];    // untouched, muted INSIDE windows
+[base1]<pitch>,volume=0:enable='lt(between(t,a1,b1)+...,1)'[ap0];          // pitched, muted OUTSIDE its windows
 [anorm][ap0]...amix=inputs=K:normalize=0:dropout_transition=0[outa]
 ```
+The timeline never moves, so sync is perfect — but the `enable=` expression has one `between()` term **per window**, and at ~130 windows ffmpeg dies with **`Error initializing complex filters. Cannot allocate memory`**. The render then produces no file. Great for a handful of windows, unusable at scale.
 
-Why it's correct: no segment boundaries in the audio timeline, so nothing drifts. The untouched track carries the timeline (exact, video-aligned); each effect track is full-length and only *audible* inside its windows; exactly one track is non-silent at any instant, so `amix:normalize=0` sums them cleanly. Scales to hundreds of windows with just `1 + (#distinct effects)` branches — and the host's audio stays perfectly in sync because it's never touched.
+**Approach C — concat, but force each piece to its EXACT length (the answer).** Cut-and-stitch like A, but after pitching a piece, pin it to its precise target duration `D = end - start` with `apad` + `atrim`, so the joined timeline can't drift:
+```
+[ai]atrim=START:END,asetpts=PTS-STARTPTS,<pitch chain>,apad=whole_dur=D,atrim=0:D[si]
+[s0][s1]...[sN]concat=n=N:v=0:a=1[outa]
+```
+Normal (un-pitched) pieces are already sample-exact from `atrim`; pitched pieces are forced exact by `apad`(pad if short)+`atrim`(trim if long). Verified at **130 windows on real 44.1k audio: A/V within ~33 ms, a marked beep stays at its original time, peak memory ~120 MB** (vs the OOM in B). Pass the (large) filtergraph via `-filter_complex_script <file>` to dodge any arg-length limit.
+
+Summary: **A drifts, B doesn't scale, C is both sync-safe and scalable.** Default to C for any "effect on selected windows" job.
 
 Notes:
-- `volume`'s `enable=` is a timeline expression: filter is ACTIVE (applies `volume=0`) when the expr is non-zero, bypassed (full volume) when zero.
-- Commas inside `between(t,a,b)` survive the `-filter_complex` parser when wrapped in single quotes: `enable='between(t,1,2)+between(t,3,4)'`. (Passed via argv, no shell — the quotes are interpreted by ffmpeg's filtergraph parser.)
-- Mixed sample rates break `amix`. Resample every branch to one rate before mixing (the `aresample` before `asplit` covers the untouched branch too).
+- Still resample to a known rate before the pitch chain (§1).
+- `apad=whole_dur=D` pads silence up to D; `atrim=0:D` caps at D → exactly D. The ±few-ms of content trimmed/padded at a window edge is inaudible; the sync win is worth it.
+- `volume`'s `enable=` (used in B) is a timeline expr: filter ACTIVE when non-zero, bypassed when zero. Fine for a few windows; don't build one with 100+ terms.
 
 ---
 
@@ -131,12 +139,24 @@ In-memory job state (detected speakers, prepared sources) is fragile — a redep
 
 ---
 
+## 9. Fail loudly — never mark a broken render "complete", never silently skip a privacy effect
+
+A multi-step render (disguise → cut → stitch → upload) had a `.catch(() => null)` on the disguise step "so it wouldn't break the whole render." When the disguise OOM'd, it fell through, the stitch *also* failed, and the job was marked **complete with a dead download link**. Two distinct failures of judgement:
+
+- **A failed step must not be swallowed into a fake success.** After the final stitch, `fs.pathExists(outputPath)` — if it's missing, `throw` and set the job to **error**, don't report complete with a URL that 404s. "The user couldn't find their render" was the symptom of a phantom-complete.
+- **A safety/privacy effect that fails must ABORT, not fall through.** If voice-disguise (the whole point: hide a shy guest) fails, you must NOT continue and ship a render with the guest's *real* voice. Re-throw and error the job. Silently producing the un-protected version is worse than failing. Same logic for any redaction/blur/mute step.
+
+General rule for media pipelines: prefer **fail-closed**. A loud error the user can retry beats a silent wrong output they trust.
+
+---
+
 ## Quick checklist for any audio/video feature
 
 - [ ] Resample to a known rate before any `asetrate`/PTS math.
-- [ ] Time-selective audio effects → volume-gated continuous tracks, never cut-and-stitch.
+- [ ] Time-selective audio effects → concat with **exact-length pieces** (`apad`+`atrim`); not naive stitch (drifts), not volume-gated `amix` at scale (OOMs ~130 windows).
 - [ ] After render, `ffprobe` video vs audio stream durations (must match).
-- [ ] Reproduce on a REAL input file (real sample rate/codec/length), not just synthetic.
+- [ ] Reproduce on a REAL input file (real sample rate/codec/length), not just synthetic — and at REAL scale (130+ windows), not 3.
 - [ ] Heavy re-encode → background job + status polling (never a synchronous request).
 - [ ] Confirm the deploy is actually live before judging a "fix didn't work."
 - [ ] Persist user selections; recover expensive/in-memory results instead of re-running.
+- [ ] Fail closed: verify the output file exists before "complete"; abort (don't fall through) if a privacy/safety effect fails.
