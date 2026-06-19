@@ -138,3 +138,27 @@ Assuming the user gives you (1) a project token and (2) a domain they want to us
 - [ ] Poll `certificateStatus` until it leaves `VALIDATING_OWNERSHIP`
 - [ ] Test cert with `openssl s_client` to confirm subject matches the domain
 - [ ] Test live URL returns 200
+
+## Trap 4 — `serviceCreate` from a GitHub repo does NOT arm push-to-deploy
+
+Creating a service with `serviceCreate(input:{ projectId, name, source:{ repo:"owner/name" } })` builds once from the repo, but it does **not** create a deploy trigger. `service(id){ repoTriggers }` comes back empty, and future `git push` does nothing. You must explicitly create the trigger:
+
+```graphql
+mutation { deploymentTriggerCreate(input:{
+  projectId:"...", environmentId:"...", serviceId:"...",
+  provider:"github", repository:"owner/name", branch:"main"
+}){ id } }
+```
+
+Verify with `service(id){ repoTriggers { edges { node { repository branch } } } }`, then prove it end-to-end: push a trivial change (e.g. add `/healthz`) and confirm a NEW deployment appears that you didn't trigger, and the new route responds live. (FindMyBuyers, Jun 2026.)
+
+## Trap 5 — variable write via the account Bearer token can silently no-op; use the CLI
+
+The Railway CLI stores a live account access token at `~/.railway/config.json` → `user.accessToken` (Bearer, ~1h TTL, refreshable). It works for `me`, `projectCreate` (needs `workspaceId` from `me { workspaces { id } }`), `serviceCreate`, `volumeCreate`, `serviceDomainCreate`, `deploymentTriggerCreate`. BUT writing env vars over it is flaky: `variableCollectionUpsert` returned `true` yet persisted nothing, and `variableUpsert` returned `"Problem processing request"`. What worked reliably: the CLI —
+
+```bash
+railway link --project <id> --environment production --service <name>
+railway variables --set "KEY=VALUE" --set "K2=V2" --service <name>
+```
+
+Then `railway variables --service <name>` to confirm, and redeploy. Gotcha that wastes time: your app reads `process.env.DATA_DIR`, but Railway only auto-sets `RAILWAY_VOLUME_MOUNT_PATH`. You must set `DATA_DIR=/data` yourself or the JSON DB lands on the ephemeral disk and the admin seeds with default creds. A bare one-word `<name>.up.railway.app` rename is rejected — Railway gives `<service>-production.up.railway.app`. (FindMyBuyers, Jun 2026.)
