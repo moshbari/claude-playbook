@@ -8,6 +8,7 @@ Before writing code, drafting copy, or making decisions on one of Mosh's project
 
 - Starting any new project (kickoff checklist + questions to ask) → `ZERO_TOUCH_SETUP.md`
 - Writing, UI, marketing copy → `WRITING_STYLE.md` + `UX_CLICK_ONLY.md`
+- Any public store listing or app branding (name, publisher, description) → `BRANDING.md`
 - Picking a URL or subdomain structure → `URL_CONVENTIONS.md`
 - SaaS with billing or auth → `SAAS_LAUNCH_CHECKLIST.md`
 - Whop billing specifically (webhooks, signatures, checkout URLs) → `WHOP_WEBHOOKS.md`

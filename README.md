@@ -20,6 +20,7 @@ At the start of a new project or task, Claude should fetch this repo's `README.m
 
 - **Starting ANY new project** → read `ZERO_TOUCH_SETUP.md` first, then `PROJECTS.md`.
 - **Any writing, UI, or product work** → read `WRITING_STYLE.md` and `UX_CLICK_ONLY.md`.
+- **Any public store listing or app branding (name, publisher, description)** → read `BRANDING.md`.
 - **Picking a URL / subdomain structure** → read `URL_CONVENTIONS.md`.
 - **Shipping a SaaS with billing or auth** → read `SAAS_LAUNCH_CHECKLIST.md`.
 - **Whop billing specifically (webhooks, signatures, checkout URLs)** → read `WHOP_WEBHOOKS.md`.
@@ -44,6 +45,7 @@ When Claude and I hit a new lesson — a mistake, a surprise, a thing that took 
 |---|---|
 | `ZERO_TOUCH_SETUP.md` | The five one-time items I need so Claude can do everything without me clicking. |
 | `WRITING_STYLE.md` | 5th-grade reading level rule. Applies to product copy, emails, and chat. |
+| `BRANDING.md` | Public branding rule — "Mosh Bari" as the visible personal brand (name/keyword/Google), "ZPresso LLC" as the publisher/legal entity. Use both, in different slots. |
 | `UX_CLICK_ONLY.md` | Click-only UX rule. Grandma-with-thick-glasses test. |
 | `URL_CONVENTIONS.md` | Flat subdomains over nested. Why `<name>.brand.com` beats `<name>.app.brand.com`. |
 | `SAAS_LAUNCH_CHECKLIST.md` | Pre-launch checklist for SaaS with billing webhooks and auth. |
